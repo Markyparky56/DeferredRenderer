@@ -1,0 +1,284 @@
+#include "LightShaderClass.hpp"
+
+LightShaderClass::LightShaderClass()
+    : vertexShader(nullptr)
+    , pixelShader(nullptr)
+    , layout(nullptr)
+    , samplerState(nullptr)
+    , matrixBuffer(nullptr)
+    , lightBuffer(nullptr)
+{
+}
+
+LightShaderClass::~LightShaderClass()
+{
+}
+
+bool LightShaderClass::Init(ID3D11Device * device, HWND hwnd)
+{
+    return initShader(device, hwnd, L"shaders/Light_vs.hlsl", L"shaders/Light_ps.hlsl");
+}
+
+void LightShaderClass::Shutdown()
+{
+    shutdownShader();
+}
+
+bool LightShaderClass::Render(ID3D11DeviceContext * deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * colourTexture, ID3D11ShaderResourceView * normalTexture, XMFLOAT3 lightDir)
+{
+    bool result = setShaderParameters(deviceContext, worldMatrix, viewMatrix, projMatrix, colourTexture, normalTexture, lightDir);
+    if (!result) return false;
+    renderShader(deviceContext, indexCount);
+    return true;
+}
+
+bool LightShaderClass::initShader(ID3D11Device * device, HWND hwnd, WCHAR * vs, WCHAR * ps)
+{
+    HRESULT result;
+    ID3DBlob *errorMessage, *vertexShaderBuffer, *pixelShaderBuffer;
+    D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+    unsigned int numElements;
+    D3D11_SAMPLER_DESC samplerDesc;
+    D3D11_BUFFER_DESC matrixBufferDesc, lightBufferDesc;
+
+    errorMessage = nullptr;
+    vertexShaderBuffer = nullptr;
+    pixelShaderBuffer = nullptr;
+
+    result = D3DCompileFromFile(vs, nullptr, nullptr, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage);
+    if (FAILED(result))
+    {
+        if (errorMessage)
+        {
+            outputShaderErrorMessage(errorMessage, hwnd, vs);
+        }
+        else
+        {
+            MessageBox(hwnd, vs, L"Missing Shader File", MB_OK);
+        }
+        return false;
+    }
+
+    result = D3DCompileFromFile(ps, nullptr, nullptr, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage);
+    if (FAILED(result))
+    {
+        if (errorMessage)
+        {
+            outputShaderErrorMessage(errorMessage, hwnd, ps);
+        }
+        else
+        {
+            MessageBox(hwnd, vs, L"Missing Shader File", MB_OK);
+        }
+        return false;
+    }
+
+    result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), nullptr, &vertexShader);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), nullptr, &pixelShader);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    polygonLayout[0].SemanticIndex = 0;
+    polygonLayout[0].SemanticName = "POSITION";
+    polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    polygonLayout[0].InputSlot = 0;
+    polygonLayout[0].AlignedByteOffset = 0;
+    polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    polygonLayout[0].InstanceDataStepRate = 0;
+
+    polygonLayout[1].SemanticIndex = 0;
+    polygonLayout[1].SemanticName = "TEXCOORD";
+    polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+    polygonLayout[1].InputSlot = 0;
+    polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+    polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    polygonLayout[1].InstanceDataStepRate = 0;
+
+    numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+    result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &layout);
+
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    vertexShaderBuffer->Release();
+    vertexShaderBuffer = nullptr;
+    pixelShaderBuffer->Release();
+    pixelShaderBuffer = nullptr;
+
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    samplerDesc.BorderColor[0] = 0;
+    samplerDesc.BorderColor[1] = 0;
+    samplerDesc.BorderColor[2] = 0;
+    samplerDesc.BorderColor[3] = 0;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    result = device->CreateSamplerState(&samplerDesc, &samplerState);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+    matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    matrixBufferDesc.MiscFlags = 0;
+    matrixBufferDesc.StructureByteStride = 0;
+
+    result = device->CreateBuffer(&matrixBufferDesc, nullptr, &matrixBuffer);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    lightBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+    lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    lightBufferDesc.MiscFlags = 0;
+    lightBufferDesc.StructureByteStride = 0;
+
+    result = device->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void LightShaderClass::shutdownShader()
+{
+    if (matrixBuffer)
+    {
+        matrixBuffer->Release();
+        matrixBuffer = nullptr;
+    }
+
+    if (lightBuffer)
+    {
+        lightBuffer->Release();
+        lightBuffer = nullptr;
+    }
+
+    if (samplerState)
+    {
+        samplerState->Release();
+        samplerState = nullptr;
+    }
+
+    if (layout)
+    {
+        layout->Release();
+        layout = nullptr;
+    }
+
+    if (pixelShader)
+    {
+        pixelShader->Release();
+        pixelShader = nullptr;
+    }
+
+    if (vertexShader)
+    {
+        vertexShader->Release();
+        vertexShader = nullptr;
+    }
+}
+
+void LightShaderClass::outputShaderErrorMessage(ID3DBlob * blob, HWND hwnd, WCHAR * shaderFilename)
+{
+    char *compileErrors;
+    unsigned long bufferSize;
+    ofstream fout;
+
+    compileErrors = static_cast<char*>(blob->GetBufferPointer());
+    bufferSize = blob->GetBufferSize();
+
+    fout.open("shader-error.txt");
+    for (int i = 0; i < bufferSize; i++)
+    {
+        fout << compileErrors[i];
+    }
+    fout.close();
+
+    blob->Release();
+    blob = nullptr;
+
+    MessageBox(hwnd, L"Error compiling shader. Check shader-error.txt for message.", shaderFilename, MB_OK);
+}
+
+bool LightShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * colourTexture, ID3D11ShaderResourceView * normalTexture, XMFLOAT3 lightDir)
+{
+    HRESULT result;
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    MatrixBufferType *matrixPtr;
+    LightBufferType *lightPtr;
+
+    worldMatrix = XMMatrixTranspose(worldMatrix);
+    viewMatrix = XMMatrixTranspose(viewMatrix);
+    projMatrix = XMMatrixTranspose(projMatrix);
+
+    result = deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(result))
+    {
+        return false;
+    }
+    matrixPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
+
+    matrixPtr->world = worldMatrix;
+    matrixPtr->view = viewMatrix;
+    matrixPtr->projection = projMatrix;
+
+    deviceContext->Unmap(matrixBuffer, 0);
+
+    result = deviceContext->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(result))
+    {
+        return false;
+    }
+    lightPtr = static_cast<LightBufferType*>(mappedResource.pData);
+
+    lightPtr->lightDirection = lightDir;
+    lightPtr->padding = 0.0f;
+
+    deviceContext->Unmap(lightBuffer, 0);
+
+    deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+    deviceContext->PSSetConstantBuffers(0, 1, &lightBuffer);
+
+    ID3D11ShaderResourceView *srvs[] = { colourTexture, normalTexture };
+    deviceContext->PSSetShaderResources(0, 2, srvs);
+
+}
+
+void LightShaderClass::renderShader(ID3D11DeviceContext * deviceContext, int indexCount)
+{
+    deviceContext->IASetInputLayout(layout);
+    deviceContext->VSSetShader(vertexShader, NULL, 0);
+    deviceContext->PSSetShader(pixelShader, NULL, 0);
+
+    deviceContext->PSSetSamplers(0, 1, &samplerState);
+
+    deviceContext->DrawIndexed(indexCount, 0, 0);
+
+    ID3D11ShaderResourceView *nullSrvs[] = { nullptr, nullptr };
+    deviceContext->PSSetShaderResources(0, 1, nullSrvs);
+}
