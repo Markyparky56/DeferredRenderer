@@ -24,7 +24,14 @@ void LightShaderClass::Shutdown()
     shutdownShader();
 }
 
-bool LightShaderClass::Render(ID3D11DeviceContext * deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * colourTexture, ID3D11ShaderResourceView * normalTexture, XMFLOAT3 lightDir)
+bool LightShaderClass::Render(ID3D11DeviceContext * deviceContext
+    , int indexCount
+    , const XMMATRIX &worldMatrix
+    , const XMMATRIX &viewMatrix
+    , const XMMATRIX &projMatrix
+    , ID3D11ShaderResourceView * colourTexture
+    , ID3D11ShaderResourceView * normalTexture
+    , const XMFLOAT3 &lightDir)
 {
     bool result = setShaderParameters(deviceContext, worldMatrix, viewMatrix, projMatrix, colourTexture, normalTexture, lightDir);
     if (!result) return false;
@@ -213,7 +220,7 @@ void LightShaderClass::outputShaderErrorMessage(ID3DBlob * blob, HWND hwnd, WCHA
     bufferSize = blob->GetBufferSize();
 
     fout.open("shader-error.txt");
-    for (int i = 0; i < bufferSize; i++)
+    for (unsigned int i = 0; i < bufferSize; i++)
     {
         fout << compileErrors[i];
     }
@@ -225,16 +232,23 @@ void LightShaderClass::outputShaderErrorMessage(ID3DBlob * blob, HWND hwnd, WCHA
     MessageBox(hwnd, L"Error compiling shader. Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-bool LightShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * colourTexture, ID3D11ShaderResourceView * normalTexture, XMFLOAT3 lightDir)
+bool LightShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext
+    , const XMMATRIX &worldMatrix
+    , const XMMATRIX &viewMatrix
+    , const XMMATRIX &projMatrix
+    , ID3D11ShaderResourceView * colourTexture
+    , ID3D11ShaderResourceView * normalTexture
+    , const XMFLOAT3 &lightDir)
 {
     HRESULT result;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     MatrixBufferType *matrixPtr;
     LightBufferType *lightPtr;
+    XMMATRIX world, view, proj;
 
-    worldMatrix = XMMatrixTranspose(worldMatrix);
-    viewMatrix = XMMatrixTranspose(viewMatrix);
-    projMatrix = XMMatrixTranspose(projMatrix);
+    world = XMMatrixTranspose(worldMatrix);
+    view = XMMatrixTranspose(viewMatrix);
+    proj = XMMatrixTranspose(projMatrix);
 
     result = deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(result))
@@ -243,11 +257,16 @@ bool LightShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext, 
     }
     matrixPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
 
-    matrixPtr->world = worldMatrix;
-    matrixPtr->view = viewMatrix;
-    matrixPtr->projection = projMatrix;
+    matrixPtr->world = world;
+    matrixPtr->view = view;
+    matrixPtr->projection = proj;
 
     deviceContext->Unmap(matrixBuffer, 0);
+
+    deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+
+    deviceContext->PSSetShaderResources(0, 1, &colourTexture);
+    deviceContext->PSSetShaderResources(1, 1, &normalTexture);
 
     result = deviceContext->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(result))
@@ -260,13 +279,12 @@ bool LightShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext, 
     lightPtr->padding = 0.0f;
 
     deviceContext->Unmap(lightBuffer, 0);
-
-    deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
     deviceContext->PSSetConstantBuffers(0, 1, &lightBuffer);
 
-    ID3D11ShaderResourceView *srvs[] = { colourTexture, normalTexture };
-    deviceContext->PSSetShaderResources(0, 2, srvs);
+    //ID3D11ShaderResourceView *srvs[] = { colourTexture, normalTexture };
+    //deviceContext->PSSetShaderResources(0, 2, srvs);
 
+    return true;
 }
 
 void LightShaderClass::renderShader(ID3D11DeviceContext * deviceContext, int indexCount)
@@ -280,5 +298,5 @@ void LightShaderClass::renderShader(ID3D11DeviceContext * deviceContext, int ind
     deviceContext->DrawIndexed(indexCount, 0, 0);
 
     ID3D11ShaderResourceView *nullSrvs[] = { nullptr, nullptr };
-    deviceContext->PSSetShaderResources(0, 1, nullSrvs);
+    deviceContext->PSSetShaderResources(0, 2, nullSrvs);
 }

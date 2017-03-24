@@ -9,6 +9,16 @@ using namespace DirectX;
 class D3DClass
 {
 public:
+    void* operator new(size_t i)
+    {
+        return _mm_malloc(i, 16);
+    }
+
+    void operator delete(void* p)
+    {
+        _mm_free(p);
+    }
+
     D3DClass();
     ~D3DClass();
 

@@ -23,10 +23,18 @@ void DeferredShaderClass::Shutdown()
     shutdownShader();
 }
 
-bool DeferredShaderClass::Render(ID3D11DeviceContext * deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * texture)
+bool DeferredShaderClass::Render(ID3D11DeviceContext * deviceContext
+    , int indexCount
+    , const XMMATRIX &worldMatrix
+    , const XMMATRIX &viewMatrix
+    , const XMMATRIX &projMatrix
+    , ID3D11ShaderResourceView * texture)
 {
     bool result = setShaderParameters(deviceContext, worldMatrix, viewMatrix, projMatrix, texture);
-    if (!result) return false;
+    if (!result)
+    {
+        return false;
+    }
     renderShader(deviceContext, indexCount);
     return true;
 }
@@ -104,7 +112,7 @@ bool DeferredShaderClass::initShader(ID3D11Device * device, HWND hwnd, WCHAR * v
     polygonLayout[2].SemanticName = "NORMAL";
     polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     polygonLayout[2].InputSlot = 0;
-    polygonLayout[2].AlignedByteOffset = 0;
+    polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
     polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     polygonLayout[2].InstanceDataStepRate = 0;
 
@@ -200,7 +208,7 @@ void DeferredShaderClass::outputShaderErrorMessage(ID3DBlob * blob, HWND hwnd, W
     bufferSize = blob->GetBufferSize();
 
     fout.open("shader-error.txt");
-    for (int i = 0; i < bufferSize; i++)
+    for (unsigned int i = 0; i < bufferSize; i++)
     {
         fout << compileErrors[i];
     }
@@ -212,15 +220,20 @@ void DeferredShaderClass::outputShaderErrorMessage(ID3DBlob * blob, HWND hwnd, W
     MessageBox(hwnd, L"Error compiling shader. Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-bool DeferredShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView * texture)
+bool DeferredShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContext
+    , const XMMATRIX &worldMatrix
+    , const XMMATRIX &viewMatrix
+    , const XMMATRIX &projMatrix
+    , ID3D11ShaderResourceView * texture)
 {
     HRESULT result;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     MatrixBufferType *dataPtr;
+    XMMATRIX world, view, proj;
 
-    worldMatrix = XMMatrixTranspose(worldMatrix);
-    viewMatrix = XMMatrixTranspose(viewMatrix);
-    projMatrix = XMMatrixTranspose(projMatrix);
+    world = XMMatrixTranspose(worldMatrix);
+    view = XMMatrixTranspose(viewMatrix);
+    proj = XMMatrixTranspose(projMatrix);
 
     result = deviceContext->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(result))
@@ -229,17 +242,15 @@ bool DeferredShaderClass::setShaderParameters(ID3D11DeviceContext * deviceContex
     }
     dataPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
 
-    dataPtr->world = worldMatrix;
-    dataPtr->view = viewMatrix;
-    dataPtr->projection = projMatrix;
+    dataPtr->world = world;
+    dataPtr->view = view;
+    dataPtr->projection = proj;
 
     deviceContext->Unmap(matrixBuffer, 0);
 
-    ID3D11Buffer *vsBuffers[] = { matrixBuffer };
-    deviceContext->VSSetConstantBuffers(0, 1, vsBuffers);
+    deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
-    ID3D11ShaderResourceView *psSrvs[] = { texture };
-    deviceContext->PSSetShaderResources(0, 1, psSrvs);
+    deviceContext->PSSetShaderResources(0, 1, &texture);
 
     return true;
 }

@@ -24,7 +24,7 @@ bool InputClass::Init(HINSTANCE hInstance, HWND _hwnd, int _screenWidth, int _sc
     mouseY = 0;
 
     // Initialise the main direct input interface
-    result = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, reinterpret_cast<void**>(directInput), NULL);
+    result = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, reinterpret_cast<void**>(&directInput), NULL);
     if (FAILED(result))
     {
         return false;

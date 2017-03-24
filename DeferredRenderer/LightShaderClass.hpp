@@ -29,14 +29,27 @@ public:
 
     bool Init(ID3D11Device *device, HWND hwnd);
     void Shutdown();
-    bool Render(ID3D11DeviceContext *deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView *colourTexture, ID3D11ShaderResourceView *normalTexture, XMFLOAT3 lightDir);
+    bool Render(ID3D11DeviceContext *deviceContext
+              , int indexCount
+              , const XMMATRIX &worldMatrix
+              , const XMMATRIX &viewMatrix
+              , const XMMATRIX &projMatrix
+              , ID3D11ShaderResourceView *colourTexture
+              , ID3D11ShaderResourceView *normalTexture
+              , const XMFLOAT3 &lightDir);
 
 private:
     bool initShader(ID3D11Device *device, HWND hwnd, WCHAR *vs, WCHAR *ps);
     void shutdownShader();
     void outputShaderErrorMessage(ID3DBlob *blob, HWND hwnd, WCHAR *shaderFilename);
 
-    bool setShaderParameters(ID3D11DeviceContext *deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projMatrix, ID3D11ShaderResourceView *colourTexture, ID3D11ShaderResourceView *normalTexture, XMFLOAT3 lightDir);
+    bool setShaderParameters(ID3D11DeviceContext *deviceContext
+                           , const XMMATRIX &worldMatrix
+                           , const XMMATRIX &viewMatrix
+                           , const XMMATRIX &projMatrix
+                           , ID3D11ShaderResourceView *colourTexture
+                           , ID3D11ShaderResourceView *normalTexture
+                           , const XMFLOAT3 &lightDir);
     void renderShader(ID3D11DeviceContext *deviceContext, int indexCount);
 
     ID3D11VertexShader *vertexShader;

@@ -179,7 +179,7 @@ bool ModelClass::LoadTexture(ID3D11Device * device, WCHAR * textureFilename)
     bool result;
 
     texture = new TextureClass;
-    if (texture)
+    if (!texture)
     {
         return false;
     }
@@ -257,7 +257,7 @@ bool ModelClass::LoadModel(char * modelFilename)
     fin.close();
 
 
-    return false;
+    return true;
 }
 
 void ModelClass::ReleaseModel()

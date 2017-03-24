@@ -24,9 +24,9 @@ public:
     void Shutdown();
     bool Render(ID3D11DeviceContext *deviceContext
               , int indexCount
-              , XMMATRIX worldMatrix
-              , XMMATRIX viewMatrix
-              , XMMATRIX projMatrix
+              , const XMMATRIX &worldMatrix
+              , const XMMATRIX &viewMatrix
+              , const XMMATRIX &projMatrix
               , ID3D11ShaderResourceView *texture);
 
 private:
@@ -35,9 +35,9 @@ private:
     void outputShaderErrorMessage(ID3DBlob *blob, HWND hwnd, WCHAR *shaderFilename);
 
     bool setShaderParameters(ID3D11DeviceContext *deviceContext
-                           , XMMATRIX worldMatrix
-                           , XMMATRIX viewMatrix
-                           , XMMATRIX projMatrix
+                           , const XMMATRIX &worldMatrix
+                           , const XMMATRIX &viewMatrix
+                           , const XMMATRIX &projMatrix
                            , ID3D11ShaderResourceView *texture);
     void renderShader(ID3D11DeviceContext *deviceContext, int indexCount);
 

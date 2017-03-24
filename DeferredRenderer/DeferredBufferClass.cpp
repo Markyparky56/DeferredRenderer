@@ -42,6 +42,21 @@ bool DeferredBuffersClass::Init(ID3D11Device * device, int texWidth, int texHeig
     textureDesc.CPUAccessFlags = 0;
     textureDesc.MiscFlags = 0;
 
+    // Create the render target textures
+    for (int i = 0; i < BufferCount; i++)
+    {
+        result = device->CreateTexture2D(&textureDesc, nullptr, &renderTargetTextureArray[i]);
+        if (FAILED(result))
+        {
+            return false;
+        }
+    }
+    
+    renderTargetViewDesc.Format = textureDesc.Format;
+    renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+    // Create the render target views
     for (int i = 0; i < BufferCount; i++)
     {
         result = device->CreateRenderTargetView(renderTargetTextureArray[i], &renderTargetViewDesc, &renderTargetViewArray[i]);
@@ -56,6 +71,7 @@ bool DeferredBuffersClass::Init(ID3D11Device * device, int texWidth, int texHeig
     shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
     shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
+    // Create the shader resource views
     for (int i = 0; i < BufferCount; i++)
     {
         result = device->CreateShaderResourceView(renderTargetTextureArray[i], &shaderResourceViewDesc, &shaderResourceViewArray[i]);
@@ -79,6 +95,7 @@ bool DeferredBuffersClass::Init(ID3D11Device * device, int texWidth, int texHeig
     depthBufferDesc.CPUAccessFlags = 0;
     depthBufferDesc.MiscFlags = 0;
 
+    // Create the depth buffer
     result = device->CreateTexture2D(&depthBufferDesc, NULL, &depthStencilBuffer);
     if (FAILED(result))
     {
@@ -91,6 +108,7 @@ bool DeferredBuffersClass::Init(ID3D11Device * device, int texWidth, int texHeig
     depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     depthStencilViewDesc.Texture2D.MipSlice = 0;
 
+    // Create the depth stencil view
     result = device->CreateDepthStencilView(depthStencilBuffer, &depthStencilViewDesc, &depthStencilView);
     if (FAILED(result))
     {

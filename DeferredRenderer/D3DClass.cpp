@@ -93,7 +93,7 @@ bool D3DClass::Init(int _screenWidth
     }
 
     // Search the display modes and find one which matches the specified screen width and height
-    for (int i = 0; i < numModes; i++)
+    for (unsigned int i = 0; i < numModes; i++)
     {
         if (displayModeList[i].Width == static_cast<unsigned int>(_screenWidth)
          && displayModeList[i].Height == static_cast<unsigned int>(_screenHeight))
@@ -183,7 +183,7 @@ bool D3DClass::Init(int _screenWidth
     featureLevel = D3D_FEATURE_LEVEL_11_0;
 
     // Create the swap chain, Direct3D device and Direct3D device context
-    result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &device, NULL, &deviceContext);
+    result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, &featureLevel, 1, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &device, NULL, &deviceContext);
     if (FAILED(result))
     {
         return false;

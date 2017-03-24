@@ -22,7 +22,6 @@ VertexToPixelConnector main(VertexInput input)
     VertexToPixelConnector output;
 
     input.position.w = 1.0f;
-
     output.position = mul(mul(mul(input.position, worldMatrix), viewMatrix), projectionMatrix);
     output.tex = input.tex;
 
