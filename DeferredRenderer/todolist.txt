@@ -1,0 +1,17 @@
+Model Loading
+    - Assimp
+    - Mesh and Model Classes
+
+Graphics
+    - Gamma Correction
+    - Lights
+        - Deferred
+        - Attenuated/Volume
+    - HDR
+    - Normal Mapping + Parallax Mapping
+    - Ambient Occlusion
+    - Anti-aliasing (SMAA https://github.com/iryoku/smaa)
+    - Bloom
+    - PBR?
+    - Text Rendering
+    - ImGUI
