@@ -3,6 +3,7 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include <fstream>
+#include "UniquePtr.hpp"
 
 using namespace DirectX;
 
@@ -21,3 +22,4 @@ private:
     bool doesFileExist(const WCHAR *filename);
     ID3D11ShaderResourceView *texture;
 };
+using pTextureClass = UniquePtr<TextureClass>;

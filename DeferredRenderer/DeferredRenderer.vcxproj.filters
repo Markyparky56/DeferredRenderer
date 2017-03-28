@@ -51,6 +51,12 @@
     <ClInclude Include="SystemClass.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ImportedMesh.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImportedModel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeferredBufferClass.cpp">
@@ -90,6 +96,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImportedMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImportedModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
