@@ -9,8 +9,10 @@ TextureClass::~TextureClass()
 {
 }
 
-bool TextureClass::Init(ID3D11Device * device, WCHAR * textureFilename)
+bool TextureClass::Init(ID3D11Device * device, WCHAR * textureFilename, TextureType _type)
 {
+    type = _type;
+
     HRESULT result;
 
     if (!textureFilename)

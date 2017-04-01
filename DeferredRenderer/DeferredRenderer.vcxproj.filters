@@ -57,6 +57,9 @@
     <ClInclude Include="ImportedModel.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CharToWString.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeferredBufferClass.cpp">

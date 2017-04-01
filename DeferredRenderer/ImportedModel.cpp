@@ -24,7 +24,7 @@ bool ImportedModel::Init(ID3D11Device * device, std::string path)
   directory = path.substr(0, path.find_last_of('/'));
 
   // Process nodes (meshes) in the scene recursively
-  processNode(scene->mRootNode, scene);
+  processNode(device, scene->mRootNode, scene);
 
   return true;
 }
@@ -73,6 +73,7 @@ ImportedMesh ImportedModel::processMesh(ID3D11Device *device, aiMesh * mesh, con
   std::vector<unsigned long> indices;
   std::vector<TextureClass> textures;
 
+  // Vertices
   for (unsigned int i = 0; i < mesh->mNumVertices; i++)
   {
     ImportedMesh::Vertex vertex;
@@ -100,11 +101,63 @@ ImportedMesh ImportedModel::processMesh(ID3D11Device *device, aiMesh * mesh, con
     }
     vertices.push_back(vertex);
   }
+  
+  // Indices
+  for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+  {
+      aiFace face = mesh->mFaces[i];
+      for (unsigned int j = 0; j < face.mNumIndices; j++)
+      {
+          indices.push_back(face.mIndices[j]);
+      }
+  }
+
+  // Material
+  if (mesh->mMaterialIndex >= 0)
+  {
+      aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];
+      std::vector<pTextureClass> diffuseMaps = loadMaterialTextures
+      (
+          device, 
+          mat, 
+          aiTextureType_DIFFUSE,
+          TextureType::Diffuse
+      );
+      std::vector<pTextureClass> specularMaps = loadMaterialTextures
+      (
+          device, 
+          mat, 
+          aiTextureType_SPECULAR,
+          TextureType::Specular
+      );
+
+      textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+      textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+  }
 
   return ImportedMesh();
 }
 
-std::vector<pTextureClass> ImportedModel::loadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName)
+std::vector<pTextureClass> ImportedModel::loadMaterialTextures(ID3D11Device *device, aiMaterial * mat, aiTextureType type, TextureType texType)
 {
-  return std::vector<pTextureClass>();
+    std::vector<pTextureClass> textures;
+    for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+    {
+        aiString str;
+        mat->GetTexture(type, i, &str);
+        std::wstring wstr = CharToWString(str.C_Str());
+        bool skipLoad = false;
+        for (auto loadedTexture = loadedTextures.begin(); loadedTexture != loadedTextures.end(); loadedTexture++)
+        {
+            if ((*loadedTexture).compare(wstr))
+            {
+                skipLoad = true; // Already loaded
+            }
+        }
+
+        TextureClass *texture = new TextureClass;
+        texture->Init(device, const_cast<WCHAR*>(wstr.c_str()), texType);
+        textures.push_back(MakeUnique<TextureClass>(texture));
+    }
+    return textures;
 }

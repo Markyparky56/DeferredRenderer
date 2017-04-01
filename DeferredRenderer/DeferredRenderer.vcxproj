@@ -120,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="AppClass.hpp" />
     <ClInclude Include="CameraClass.hpp" />
+    <ClInclude Include="CharToWString.hpp" />
     <ClInclude Include="D3DClass.hpp" />
     <ClInclude Include="DeferredBufferClass.hpp" />
     <ClInclude Include="DeferredShaderClass.hpp" />
