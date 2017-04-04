@@ -8,10 +8,10 @@ static std::wstring CharToWString(const char *text)
 {
     const std::size_t size = std::strlen(text);
     std::wstring wstr;
-    if (size)
+    if (size > 0)
     {
         wstr.resize(size);
-        std::mbstowcs(&wstr[0], text, size);
+        MultiByteToWideChar(CP_ACP, 0, text, size, &wstr[0], size);
     }
     return wstr;
 }

@@ -29,5 +29,5 @@ private:
   void loadModel(std::string path);
   void processNode(ID3D11Device *device, aiNode *node, const aiScene *scene);
   ImportedMesh processMesh(ID3D11Device *device, aiMesh *mesh, const aiScene *scene);
-  std::vector<pTextureClass> loadMaterialTextures(ID3D11Device *device, aiMaterial *mat, aiTextureType type, TextureType texType);
+  std::vector<TextureClass> loadMaterialTextures(ID3D11Device *device, aiMaterial *mat, aiTextureType type, TextureType texType);
 };

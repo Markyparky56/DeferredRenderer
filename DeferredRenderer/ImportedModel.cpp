@@ -52,7 +52,7 @@ void ImportedModel::loadModel(std::string path)
 
 void ImportedModel::processNode(ID3D11Device *device, aiNode * node, const aiScene * scene)
 {
-  for (int i = 0; i < node->mNumMeshes; i++)
+  for (unsigned int i = 0; i < node->mNumMeshes; i++)
   {
     // The node object only contains indices to index the actual objects in the scene
     // The scene contains all the data, node is just to keep stuff organised
@@ -116,14 +116,14 @@ ImportedMesh ImportedModel::processMesh(ID3D11Device *device, aiMesh * mesh, con
   if (mesh->mMaterialIndex >= 0)
   {
       aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];
-      std::vector<pTextureClass> diffuseMaps = loadMaterialTextures
+      std::vector<TextureClass> diffuseMaps = loadMaterialTextures
       (
           device, 
           mat, 
           aiTextureType_DIFFUSE,
           TextureType::Diffuse
       );
-      std::vector<pTextureClass> specularMaps = loadMaterialTextures
+      std::vector<TextureClass> specularMaps = loadMaterialTextures
       (
           device, 
           mat, 
@@ -138,9 +138,9 @@ ImportedMesh ImportedModel::processMesh(ID3D11Device *device, aiMesh * mesh, con
   return ImportedMesh();
 }
 
-std::vector<pTextureClass> ImportedModel::loadMaterialTextures(ID3D11Device *device, aiMaterial * mat, aiTextureType type, TextureType texType)
+std::vector<TextureClass> ImportedModel::loadMaterialTextures(ID3D11Device *device, aiMaterial * mat, aiTextureType type, TextureType texType)
 {
-    std::vector<pTextureClass> textures;
+    std::vector<TextureClass> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString str;
@@ -155,9 +155,9 @@ std::vector<pTextureClass> ImportedModel::loadMaterialTextures(ID3D11Device *dev
             }
         }
 
-        TextureClass *texture = new TextureClass;
-        texture->Init(device, const_cast<WCHAR*>(wstr.c_str()), texType);
-        textures.push_back(MakeUnique<TextureClass>(texture));
+        TextureClass texture;
+        texture.Init(device, const_cast<WCHAR*>(wstr.c_str()), texType);
+        textures.push_back(TextureClass(texture));
     }
     return textures;
 }
